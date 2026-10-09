@@ -6,13 +6,14 @@ import {
     addWeeks,
     addYears,
     compareAsc,
-    differenceInBusinessDays,
-    differenceInCalendarDays,
-    getDay,
 } from "date-fns";
-import { getHolidaysBetweenDates } from "./feriados.js";
 import z from "zod";
-import { addHolidays } from "./days.js";
+import {
+    addHolidays,
+    getBusinessDays,
+    getCalendarDays,
+    getHolidays,
+} from "./days.js";
 
 const app = express();
 const port = 8080;
@@ -72,8 +73,8 @@ app.get("/dias-corridos", (req, res) => {
 
     const { de: fromDate, ate: toDate } = parse.data;
 
-    const days = differenceInCalendarDays(toDate, fromDate);
-    return res.send({ days });
+    const result = getCalendarDays(fromDate, toDate);
+    return res.send(result);
 });
 
 app.get("/dias-uteis", async (req, res) => {
@@ -85,31 +86,8 @@ app.get("/dias-uteis", async (req, res) => {
 
     const { de: fromDate, ate: toDate } = parse.data;
 
-    const businessDays = differenceInBusinessDays(toDate, fromDate);
-    const holidays = await getHolidaysBetweenDates(fromDate, toDate);
-    const countedHolidays = new Set();
-    let coutedDays = businessDays;
-
-    holidays.forEach(({ date }) => {
-        const weekday = getDay(date);
-        const SUNDAY = 0;
-        const SATURDAY = 6;
-
-        if (
-            ![SUNDAY, SATURDAY].includes(weekday) &&
-            !countedHolidays.has(date)
-        ) {
-            countedHolidays.add(date);
-            coutedDays -= 1;
-        }
-    });
-
-    res.send({
-        businessDays: coutedDays,
-        holidays: holidays.map(({ date, name }) => {
-            return { date, name };
-        }),
-    });
+    const result = await getBusinessDays(fromDate, toDate);
+    res.send(result);
 });
 
 app.get("/feriados", async (req, res) => {
@@ -121,8 +99,7 @@ app.get("/feriados", async (req, res) => {
 
     const { de: fromDate, ate: toDate } = parse.data;
 
-    const holidays = await getHolidaysBetweenDates(fromDate, toDate);
-
+    const holidays = await getHolidays(fromDate, toDate);
     res.send(holidays);
 });
 
