@@ -1,0 +1,24 @@
+{
+    "name": "calcdu",
+    "version": "1.0.0",
+    "description": "calculadora de dias úteis",
+    "main": "src/index.js",
+    "type": "module",
+    "scripts": {
+        "dev": "npx tsx --watch src/index.ts"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "better-sqlite3": "^13.0.3",
+        "date-fns": "^4.4.0",
+        "sqlite3": "^6.0.1",
+        "zod": "^4.6.5"
+    },
+    "devDependencies": {
+        "@types/better-sqlite3": "^9.6.0",
+        "@types/express": "^5.0.6",
+        "express": "^5.2.1",
+        "ts-node": "^10.9.2"
+    }
+}
