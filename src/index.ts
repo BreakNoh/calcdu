@@ -12,6 +12,7 @@ import {
 } from "date-fns";
 import { getHolidaysBetweenDates } from "./feriados.js";
 import z from "zod";
+import { addHolidays } from "./days.js";
 
 const app = express();
 const port = 8080;
@@ -22,7 +23,7 @@ const schemaAdicionar = z.object({
     un: z.enum(["w", "d", "b", "h", "m", "y"]),
 });
 
-app.get("/add", (req, res) => {
+app.get("/add", async (req, res) => {
     const parse = schemaAdicionar.safeParse(req.query);
     if (!parse.success) {
         return res.status(400).send();
@@ -48,6 +49,7 @@ app.get("/add", (req, res) => {
             result = addBusinessDays(refDate, quantity);
             break;
         case "h":
+            result = await addHolidays(refDate, quantity);
             break;
     }
 
