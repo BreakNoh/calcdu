@@ -71,7 +71,7 @@ app.get("/api/dias-corridos", (req, res) => {
     const { de: fromDate, ate: toDate } = parse.data;
 
     const result = getCalendarDays(fromDate, toDate);
-    return res.send({ count: result });
+    return res.send(result);
 });
 
 app.get("/api/dias-uteis", async (req, res) => {
@@ -84,7 +84,7 @@ app.get("/api/dias-uteis", async (req, res) => {
     const { de: fromDate, ate: toDate } = parse.data;
 
     const result = await getBusinessDays(fromDate, toDate);
-    res.send({ count: result });
+    res.send(result);
 });
 
 app.get("/api/feriados", async (req, res) => {
