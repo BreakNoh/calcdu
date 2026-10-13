@@ -1,10 +1,16 @@
 import {
+    addBusinessDays,
+    addDays,
+    addMonths,
+    addWeeks,
+    addYears,
     compareAsc,
     DateArg,
     differenceInBusinessDays,
     differenceInCalendarDays,
     getDay,
     getYear,
+    isWeekend,
 } from "date-fns";
 import { getHolidaysBetweenDates, getYearHolidays } from "./feriados.js";
 
@@ -41,6 +47,60 @@ export async function addHolidays(
     return new Date(lastHoliday || date);
 }
 
+export function addWeekends(
+    date: DateArg<Date>,
+    quantity: number
+): Date {
+    let currentDate = new Date(date);
+    if (isNaN(currentDate.getTime())) {
+        return new Date(NaN);
+    }
+
+    const amount = Math.trunc(quantity);
+    if (isNaN(amount) || amount === 0) {
+        return currentDate;
+    }
+
+    const step = Math.sign(amount);
+    let remaining = Math.abs(amount);
+
+    while (remaining > 0) {
+        currentDate = addDays(currentDate, step);
+        if (isWeekend(currentDate)) {
+            remaining -= 1;
+        }
+    }
+
+    return currentDate;
+}
+
+export type TimeUnit = "w" | "d" | "b" | "h" | "m" | "y" | "f";
+
+export async function addToDate(
+    refDate: Date,
+    quantity: number,
+    unity: TimeUnit
+): Promise<Date | null> {
+    switch (unity) {
+        case "y":
+            return addYears(refDate, quantity);
+        case "m":
+            return addMonths(refDate, quantity);
+        case "w":
+            return addWeeks(refDate, quantity);
+        case "d":
+            return addDays(refDate, quantity);
+        case "b":
+            return addBusinessDays(refDate, quantity);
+        case "h":
+            return await addHolidays(refDate, quantity);
+        case "f":
+            return addWeekends(refDate, quantity);
+        default:
+            return null;
+    }
+}
+
 export function getCalendarDays(fromDate: Date, toDate: Date) {
     const days = differenceInCalendarDays(toDate, fromDate);
     return { days };
@@ -72,6 +132,26 @@ export async function getBusinessDays(fromDate: Date, toDate: Date) {
     };
 }
 
+export function getWeekends(fromDate: Date, toDate: Date) {
+    const days = differenceInCalendarDays(toDate, fromDate);
+    const rawBusinessDays = differenceInBusinessDays(toDate, fromDate);
+    return days - rawBusinessDays;
+}
+
 export async function getHolidays(fromDate: Date, toDate: Date) {
     return await getHolidaysBetweenDates(fromDate, toDate);
+}
+
+export async function getInterval(fromDate: Date, toDate: Date) {
+    const days = differenceInCalendarDays(toDate, fromDate);
+    const rawBusinessDays = differenceInBusinessDays(toDate, fromDate);
+    const weekends = days - rawBusinessDays;
+    const { businessDays, holidays } = await getBusinessDays(fromDate, toDate);
+
+    return {
+        days,
+        businessdays: Math.max(0, businessDays),
+        weekends,
+        holidays: holidays.length,
+    };
 }
