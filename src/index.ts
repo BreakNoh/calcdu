@@ -1,4 +1,6 @@
 import express from "express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { compareAsc, endOfDay, getDay, startOfDay } from "date-fns";
 import z from "zod";
 import {
@@ -10,8 +12,15 @@ import {
     getWeekends,
 } from "./days.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const readmePath = path.resolve(__dirname, "../README.md");
+
 const app = express();
 const port = 8080;
+
+app.get("/", (req, res) => {
+    res.sendFile(readmePath);
+});
 
 const schemaAdicionar = z.object({
     ref: z.coerce.date(),
