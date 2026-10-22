@@ -1,31 +1,56 @@
-# calcdu
+# sv
 
-Uma API básica de calculadora de dias
+Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
 
-## Endpoint de consulta
+## Creating a project
 
-| Função                             | Endpoint                                                 |
-| ---------------------------------- | -------------------------------------------------------- |
-| Contar dias corridos entre 2 datas | /api/dias-corridos?de={dataAnterior}&ate={dataPosterior} |
-| Contar dias úteis entre 2 datas    | /api/dias-uteis?de={dataAnterior}&ate={dataPosterior}    |
-| Feriados entre 2 datas             | /api/feriados?de={dataAnterior}&ate={dataPosterior}      |
-| Resumo de intervalo                | /api/feriados?de={dataAnterior}&ate={dataPosterior}      |
+If you're seeing this, you've probably already done this step. Congrats!
 
-## Endpoint de cálculo
+```sh
+# create a new project
+npx sv create my-app
+```
 
-| Função                 | Endpoint                                                       |
-| ---------------------- | -------------------------------------------------------------- |
-| Adicionar dias em data | /api/adicionar?ref={data}&qnt={quantidade}&un={unidadeDeTempo} |
-| Subtrair dias em data  | /api/subtrair?ref={data}&qnt={quantidade}&un={unidadeDeTempo}  |
+To recreate this project with the same configuration:
 
-## Unidades de tempo
+```sh
+# recreate this project
+npx sv@1.1.1 create --template minimal --types ts --add prettier --install npm ./
+```
 
-| Identificador | Unidade       |
-| ------------- | ------------- |
-| d             | dia corrido   |
-| b             | dia útil      |
-| f             | fim de semana |
-| w             | semana        |
-| m             | mês           |
-| y             | ano           |
-| h             | feriado       |
+## Adding features
+
+Add features to your project with `sv add`:
+
+```sh
+npx sv add
+```
+
+For example, to add Tailwind CSS:
+
+```sh
+npx sv add tailwindcss
+```
+
+## Developing
+
+Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+
+```sh
+npm run dev
+
+# or start the server and open the app in a new browser tab
+npm run dev -- --open
+```
+
+## Building
+
+To create a production version of your app:
+
+```sh
+npm run build
+```
+
+You can preview the production build with `npm run preview`.
+
+> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
