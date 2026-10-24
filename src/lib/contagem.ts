@@ -1,45 +1,59 @@
-import { type FeriadoBrasilAPI } from './feriados';
+import { pegarFeriadosIntervalo, type FeriadoBrasilAPI } from './feriados';
 
-export function contarDiasCorridos(deData: Temporal.PlainDate, ateData: Temporal.PlainDate) {
-	return deData.until(ateData).total('days');
-}
-
-export function contarFinaisDeSemana(deData: Temporal.PlainDate, ateData: Temporal.PlainDate) {
-	const diasCorridos = contarDiasCorridos(deData, ateData);
-
-	if (diasCorridos <= 0) {
-		return { sabados: 0, domingos: 0, total: 0 };
-	}
-
-	const diaDaSemanaInicial = deData.day;
-	const semanasCompletas = Math.floor(diasCorridos / 7);
-	let sabados = semanasCompletas;
-	let domingos = semanasCompletas;
-
-	const diasRestantes = diasCorridos % 7;
-
-	for (let i = 0; i < diasRestantes; i++) {
-		const diaAtual = (diaDaSemanaInicial + i) % 7;
-
-		if (diaAtual === 6) {
-			sabados++;
-		} else if (diaAtual === 0) {
-			domingos++;
-		}
-	}
-
-	return {
-		sabados,
-		domingos,
-		total: sabados + domingos
+export function contarDias(deData: Temporal.PlainDate, ateData: Temporal.PlainDate) {
+	let dataAtual = deData;
+	let contagem = {
+		total: 0,
+		du: 0,
+		fds: 0,
+		segunda: 0,
+		terca: 0,
+		quarta: 0,
+		quinta: 0,
+		sexta: 0,
+		sabado: 0,
+		domingo: 0
 	};
+
+	while (Temporal.PlainDate.compare(dataAtual, ateData) < 1) {
+		contagem.total++;
+		switch (dataAtual.dayOfWeek) {
+			case 1:
+				contagem.segunda++;
+				break;
+			case 2:
+				contagem.terca++;
+				break;
+			case 3:
+				contagem.quarta++;
+				break;
+			case 4:
+				contagem.quinta++;
+				break;
+			case 5:
+				contagem.sexta++;
+				break;
+			case 6:
+				contagem.sabado++;
+				break;
+			case 7:
+				contagem.domingo++;
+				break;
+		}
+
+		dataAtual = dataAtual.add({ days: 1 });
+	}
+
+	contagem.du =
+		contagem.segunda + contagem.terca + contagem.quarta + contagem.quinta + contagem.sexta;
+	contagem.fds = contagem.sabado + contagem.domingo;
+
+	return contagem;
 }
 
-export function contarFeriados(
-	deData: Temporal.PlainDate,
-	ateData: Temporal.PlainDate,
-	feriados: FeriadoBrasilAPI[]
-) {
+export async function contarFeriados(deData: Temporal.PlainDate, ateData: Temporal.PlainDate) {
+	const feriados: FeriadoBrasilAPI[] = await pegarFeriadosIntervalo(deData.year, ateData.year);
+
 	const feriadosEntreDatas = feriados.filter(({ date }) => {
 		return (
 			Temporal.PlainDate.compare(date, deData) >= 0 &&
@@ -57,26 +71,7 @@ export function contarFeriados(
 
 	return {
 		total: feriadosEntreDatas.length,
-		diasUnicos,
-		caiEmDiaUtil
+		unicos: diasUnicos,
+		caiEmDiaUtil: caiEmDiaUtil
 	};
-}
-
-export function contarDiasUteis(
-	deData: Temporal.PlainDate,
-	ateData: Temporal.PlainDate,
-	feriados: FeriadoBrasilAPI[]
-): number {
-	const diasCorridos = contarDiasCorridos(deData, ateData);
-
-	if (diasCorridos <= 0) {
-		return 0;
-	}
-
-	const finaisDeSemana = contarFinaisDeSemana(deData, ateData);
-	const feriadosContados = contarFeriados(deData, ateData, feriados);
-
-	const diasUteis = diasCorridos - finaisDeSemana.total - feriadosContados.caiEmDiaUtil;
-
-	return Math.max(0, diasUteis);
 }
