@@ -1,41 +1,52 @@
 <script lang="ts">
-	import { contarDias, contarFeriados } from '#lib/contagem.ts';
+	import { LockSolid, LockOpenSolid } from 'flowbite-svelte-icons';
+	import { Datepicker, Span, type DateOrRange } from 'flowbite-svelte';
+	import {
+		contarDias,
+		contarFeriados,
+		type ContagemDias,
+		type ContagemFeriados
+	} from '#lib/contagem.ts';
+	import { datePraPlainDate } from '#lib/util.ts';
+	import Sumario from './Sumario.svelte';
 
-	let deDataRaw = $state(Temporal.Now.plainDateISO().toString());
-	let ateDataRaw = $state(Temporal.Now.plainDateISO().toString());
-	let deData = $state(Temporal.Now.plainDateISO());
-	let ateData = $state(Temporal.Now.plainDateISO());
+	let deData = $state(new Date());
+	let ateData = $state(new Date());
 
-	let contagem = $derived(contarDias(deData, ateData));
+	let contagem = $state<ContagemDias>();
+	let contagemFeriados = $state<ContagemFeriados>();
 
 	$effect(() => {
-		try {
-			deData = Temporal.PlainDate.from(deDataRaw);
-			ateData = Temporal.PlainDate.from(ateDataRaw);
-		} catch {
-			alert('Data Inválida');
+		if (!deData || !ateData) {
+			return;
 		}
+
+		const de = datePraPlainDate(deData);
+		const ate = datePraPlainDate(ateData);
+
+		contagem = contarDias(de, ate);
+		contarFeriados(de, ate).then((v) => (contagemFeriados = v));
 	});
 </script>
 
-<label for="data-de">de data</label>
-<input type="date" id="data-de" bind:value={deDataRaw} />
+<LockSolid />
+<LockOpenSolid />
 
-<label for="data-ate">até data</label>
-<input type="date" id="data-ate" bind:value={ateDataRaw} />
+<div id="selecao-intervalo">
+	<Datepicker bind:value={deData} disabled />
+	<Span>até</Span>
+	<Datepicker bind:value={ateData} availableFrom={deData} />
+</div>
 
-<p>
-	<span>Dias Corridos</span>
-	{contagem.total}
-	<br />
-	{#await contarFeriados(deData, ateData) then feriados}
-		<span>Dias Úteis</span>
-		{contagem.du - feriados.total}
-		<br />
-		<span>Feriados</span>
-		{feriados.total}
-	{/await}
-	<br />
-	<span>Finais de Semana</span>
-	{contagem.fds}
-</p>
+<!-- <Datepicker range bind:rangeFrom={deData} bind:rangeTo={ateData} /> -->
+
+{#if contagem && contagemFeriados}
+	<Sumario {contagem} {contagemFeriados} />
+{/if}
+
+<style>
+	div#selecao-intervalo {
+		display: flex;
+		gap: 18px;
+	}
+</style>

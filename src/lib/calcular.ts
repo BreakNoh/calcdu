@@ -1,20 +1,18 @@
-import { pegarFeriadosAno, pegarFeriadosIntervalo, type FeriadoBrasilAPI } from './feriados';
+import { pegarFeriadosAno } from './feriados';
 
 export function adicionarDiasCorridos(dataInicial: Temporal.PlainDate, dias: number) {
 	return dataInicial.add({ days: dias });
 }
 
-export async function adicionarFinsDeSemana(
-	dataInicial: Temporal.PlainDate,
-	dias: number,
-	feriadosIniciais: FeriadoBrasilAPI[]
-) {
-	if (dias) {
+export async function adicionarFeriados(dataInicial: Temporal.PlainDate, dias: number) {
+	if (dias == 0) {
 		return dataInicial;
 	}
 
 	let proximoAno = dataInicial.year;
-	const feriadosContados = feriadosIniciais.filter(({ date }) => {
+	const feriados = await pegarFeriadosAno(dataInicial.year);
+
+	const feriadosContados = feriados.filter(({ date }) => {
 		return Temporal.PlainDate.compare(date, dataInicial) >= 0;
 	});
 

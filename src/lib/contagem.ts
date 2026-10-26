@@ -1,6 +1,25 @@
 import { pegarFeriadosIntervalo, type FeriadoBrasilAPI } from './feriados';
 
-export function contarDias(deData: Temporal.PlainDate, ateData: Temporal.PlainDate) {
+export type ContagemDias = {
+	total: number;
+	du: number;
+	fds: number;
+	segunda: number;
+	terca: number;
+	quarta: number;
+	quinta: number;
+	sexta: number;
+	sabado: number;
+	domingo: number;
+};
+
+export type ContagemFeriados = {
+	total: number;
+	unicos: number;
+	caiEmDiaUtil: number;
+};
+
+export function contarDias(deData: Temporal.PlainDate, ateData: Temporal.PlainDate): ContagemDias {
 	let dataAtual = deData;
 	let contagem = {
 		total: 0,
@@ -51,7 +70,10 @@ export function contarDias(deData: Temporal.PlainDate, ateData: Temporal.PlainDa
 	return contagem;
 }
 
-export async function contarFeriados(deData: Temporal.PlainDate, ateData: Temporal.PlainDate) {
+export async function contarFeriados(
+	deData: Temporal.PlainDate,
+	ateData: Temporal.PlainDate
+): Promise<ContagemFeriados> {
 	const feriados: FeriadoBrasilAPI[] = await pegarFeriadosIntervalo(deData.year, ateData.year);
 
 	const feriadosEntreDatas = feriados.filter(({ date }) => {
