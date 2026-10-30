@@ -1,34 +1,46 @@
 import { pegarFeriadosAno } from './feriados';
 
+export type CampoDias = 'dias' | 'diasUteis' | 'fimDeSemana' | 'feriados';
+export type Direcao = 1 | -1;
+
 export function adicionarDiasCorridos(dataInicial: Temporal.PlainDate, dias: number) {
 	return dataInicial.add({ days: dias });
 }
 
-export async function adicionarFeriados(dataInicial: Temporal.PlainDate, dias: number) {
-	if (dias == 0) {
+export async function adicionarFeriados(
+	dataInicial: Temporal.PlainDate,
+	dias: number,
+	direcao: Direcao = 1
+): Promise<Temporal.PlainDate> {
+	if (dias <= 0) {
 		return dataInicial;
 	}
 
-	let proximoAno = dataInicial.year;
-	const feriados = await pegarFeriadosAno(dataInicial.year);
+	let ano = dataInicial.year;
+	const feriados = new Map<string, Temporal.PlainDate>();
 
-	const feriadosContados = feriados.filter(({ date }) => {
-		return Temporal.PlainDate.compare(date, dataInicial) >= 0;
-	});
+	while (true) {
+		const feriadosAno = await pegarFeriadosAno(ano);
 
-	while (feriadosContados.length < dias) {
-		const feriadosProximoAno = await pegarFeriadosAno(proximoAno);
+		for (const { date } of feriadosAno) {
+			const feriado = Temporal.PlainDate.from(date);
+			const comparacao = Temporal.PlainDate.compare(feriado, dataInicial);
 
-		feriadosContados.push(...feriadosProximoAno);
-
-		if (feriadosContados.length >= dias) {
-			break;
+			if (direcao > 0 ? comparacao >= 0 : comparacao <= 0) {
+				feriados.set(date, feriado);
+			}
 		}
 
-		proximoAno += 1;
-	}
+		const feriadosOrdenados = [...feriados.values()].sort(
+			(a, b) => Temporal.PlainDate.compare(a, b) * direcao
+		);
 
-	return feriadosContados[dias - 1];
+		if (feriadosOrdenados.length >= dias) {
+			return feriadosOrdenados[dias - 1];
+		}
+
+		ano += direcao;
+	}
 }
 
 export function adicionarDiasUteis(
@@ -74,4 +86,60 @@ export function adicionarDiasUteis(
 	}
 
 	return dataInicial.add({ days: sign * diasCalendario });
+}
+
+export async function adicionarDiasUteisComFeriados(
+	dataInicial: Temporal.PlainDate,
+	dias: number,
+	direcao: Direcao = 1
+): Promise<Temporal.PlainDate> {
+	if (dias <= 0) return dataInicial;
+
+	let data = dataInicial;
+	let contados = 0;
+	let anoFeriados = dataInicial.year;
+	let feriados = new Set((await pegarFeriadosAno(anoFeriados)).map(({ date }) => date));
+
+	while (contados < dias) {
+		if (data.year !== anoFeriados) {
+			anoFeriados = data.year;
+			const feriadosAno = await pegarFeriadosAno(anoFeriados);
+			feriados = new Set([...feriados, ...feriadosAno.map(({ date }) => date)]);
+		}
+
+		if (data.dayOfWeek <= 5 && !feriados.has(data.toString())) {
+			contados += 1;
+
+			if (contados === dias) {
+				return data;
+			}
+		}
+
+		data = data.add({ days: direcao });
+	}
+
+	return data;
+}
+
+export function adicionarFinaisDeSemana(
+	dataInicial: Temporal.PlainDate,
+	dias: number,
+	direcao: Direcao = 1
+): Temporal.PlainDate {
+	if (dias <= 0) return dataInicial;
+
+	let data = dataInicial;
+	let contados = 0;
+
+	while (true) {
+		if (data.dayOfWeek >= 6) {
+			contados += 1;
+
+			if (contados === dias) {
+				return data;
+			}
+		}
+
+		data = data.add({ days: direcao });
+	}
 }

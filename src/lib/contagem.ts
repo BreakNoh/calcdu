@@ -84,8 +84,8 @@ export async function contarFeriados(
 	});
 
 	const feriadosContaveis = feriadosEntreDatas.filter(({ date }) => {
-		const dia = Temporal.PlainDate.from(date).day;
-		return dia !== 0 && dia !== 6;
+		const diaDaSemana = Temporal.PlainDate.from(date).dayOfWeek;
+		return diaDaSemana !== 6 && diaDaSemana !== 7;
 	});
 
 	const diasUnicos = new Set(feriadosEntreDatas.map(({ date }) => date)).size;

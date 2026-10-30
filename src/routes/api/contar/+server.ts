@@ -1,10 +1,5 @@
-import {
-	contarDiasCorridos,
-	contarDiasUteis,
-	contarFeriados,
-	contarFinaisDeSemana
-} from '#lib/contagem.js';
-import { pegarFeriadosIntervalo } from '#lib/feriados.js';
+import { contarDias, contarFeriados } from '#lib/contagem.js';
+import { datePraPlainDate } from '#lib/util.js';
 import { utc } from '@date-fns/utc';
 import { type RequestHandler } from '@sveltejs/kit';
 import { differenceInCalendarDays } from 'date-fns';
@@ -32,18 +27,17 @@ export const GET: RequestHandler = async ({ url }) => {
 	}
 
 	const { deData, ateData } = parse.data;
+	const de = datePraPlainDate(deData);
+	const ate = datePraPlainDate(ateData);
 
-	const diasCorridos = contarDiasCorridos(deData, ateData);
-	const feriados = await pegarFeriadosIntervalo(deData.getUTCFullYear(), ateData.getUTCFullYear());
-	const diasUteis = contarDiasUteis(deData, ateData, feriados);
-	const diasFeriados = contarFeriados(deData, ateData, feriados);
-	const finsSemana = contarFinaisDeSemana(deData, ateData);
+	const contagem = contarDias(de, ate);
+	const feriados = await contarFeriados(de, ate);
 
 	const resultado = {
-		corridos: diasCorridos,
-		uteis: diasUteis,
-		feriados: diasFeriados.diasUnicos,
-		finaisDeSemana: finsSemana.total
+		corridos: contagem.total,
+		uteis: contagem.du - feriados.caiEmDiaUtil,
+		feriados: feriados.unicos,
+		finaisDeSemana: contagem.fds
 	};
 
 	return new Response(JSON.stringify(resultado), {
