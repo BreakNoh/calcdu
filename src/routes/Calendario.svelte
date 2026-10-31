@@ -6,7 +6,7 @@
 		ChevronLeftOutline,
 		ChevronRightOutline
 	} from 'flowbite-svelte-icons';
-	import { pegarFeriadosIntervalo, type FeriadoBrasilAPI } from '#lib/feriados.ts';
+	import { pegarFeriadosAno, type FeriadoBrasilAPI } from '#lib/feriados.ts';
 	import { datePraPlainDate, plainDatePraDate } from '#lib/util.ts';
 
 	type PropsCalendario = {
@@ -43,8 +43,8 @@
 	let anoVisivel = $state(untrack(() => de.getFullYear()));
 	let mesVisivel = $state(untrack(() => de.getMonth() + 1));
 
-	let feriados = $state<FeriadoBrasilAPI[]>([]);
-	let anosCarregados = $state<{ de: number; ate: number } | null>(null);
+	let feriadosPorAno = $state<Record<number, FeriadoBrasilAPI[]>>({});
+	const anosCarregando = new Set<number>();
 
 	let selecaoPendente = $state<Temporal.PlainDate | null>(null);
 	let diaAtivo = $state<Temporal.PlainDate | null>(null);
@@ -54,6 +54,8 @@
 	let ateAnterior: number | null = null;
 
 	const diaDetalhe = $derived(diaFixado ?? diaAtivo ?? inicio);
+
+	const feriados = $derived(Object.values(feriadosPorAno).flat());
 
 	const feriadosPorData = $derived.by(() => {
 		const mapa = new Map<string, string[]>();
@@ -90,33 +92,36 @@
 
 	const rotuloMes = $derived(formatadorMes.format(new Date(anoVisivel, mesVisivel - 1, 1)));
 
-	$effect(() => {
-		const deAno = de.getFullYear();
-		const ateAno = ate.getFullYear();
-
-		if (anosCarregados?.de === deAno && anosCarregados.ate === ateAno) {
+	async function carregarAno(ano: number) {
+		if (feriadosPorAno[ano] || anosCarregando.has(ano)) {
 			return;
 		}
 
-		let cancelado = false;
+		anosCarregando.add(ano);
 
-		pegarFeriadosIntervalo(deAno, ateAno)
-			.then((lista) => {
-				if (!cancelado) {
-					feriados = lista;
-					anosCarregados = { de: deAno, ate: ateAno };
-				}
-			})
-			.catch(() => {
-				if (!cancelado) {
-					feriados = [];
-					anosCarregados = { de: deAno, ate: ateAno };
-				}
-			});
+		try {
+			const lista = await pegarFeriadosAno(ano);
+			feriadosPorAno = { ...feriadosPorAno, [ano]: lista };
+		} catch {
+			feriadosPorAno = { ...feriadosPorAno, [ano]: [] };
+		} finally {
+			anosCarregando.delete(ano);
+		}
+	}
 
-		return () => {
-			cancelado = true;
-		};
+	$effect(() => {
+		const deAno = de.getFullYear();
+		const ateAno = ate.getFullYear();
+		const primeiroAno = Math.min(deAno, ateAno);
+		const ultimoAno = Math.max(deAno, ateAno);
+
+		for (let ano = primeiroAno; ano <= ultimoAno; ano++) {
+			carregarAno(ano);
+		}
+	});
+
+	$effect(() => {
+		carregarAno(anoVisivel);
 	});
 
 	$effect(() => {
