@@ -8,6 +8,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
+	<meta name="google-adsense-account" content="ca-pub-1547067636561503">
 </svelte:head>
 
 {@render children()}
