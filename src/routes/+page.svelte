@@ -2,6 +2,8 @@
 	import {
 		ArrowRightOutline,
 		CalendarMonthSolid,
+		CheckOutline,
+		ClipboardOutline,
 		InfoCircleOutline,
 		LockOpenSolid,
 		LockSolid,
@@ -9,7 +11,7 @@
 		SunSolid
 	} from 'flowbite-svelte-icons';
 	import { onMount } from 'svelte';
-	import { Datepicker } from 'flowbite-svelte';
+	import { Datepicker, type ActionSlotParams } from 'flowbite-svelte';
 	import {
 		contarDias,
 		contarFeriados,
@@ -23,7 +25,7 @@
 		adicionarFinaisDeSemana,
 		type CampoDias
 	} from '#lib/calcular.ts';
-	import { datePraPlainDate, plainDatePraDate } from '#lib/util.ts';
+	import { copiarTexto, datePraPlainDate, plainDatePraDate } from '#lib/util.ts';
 	import Calendario from './Calendario.svelte';
 	import Sumario from './Sumario.svelte';
 
@@ -37,10 +39,43 @@
 	let ultimaAtualizacao = 0;
 
 	let escuro = $state(false);
+	let dataCopiada = $state<'de' | 'ate' | null>(null);
+	let tempoDataCopiada: ReturnType<typeof setTimeout> | undefined;
+	let datasCarregadas = $state(false);
+	let calendarioAberto = $state(true);
+
+	const CHAVE_DATAS = 'datas';
 
 	onMount(() => {
 		const salvo = localStorage.getItem('tema');
 		escuro = salvo ? salvo === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+		calendarioAberto = window.matchMedia('(min-width: 1024px)').matches;
+
+		const datasSalvas = localStorage.getItem(CHAVE_DATAS);
+
+		if (datasSalvas) {
+			try {
+				const { de, ate } = JSON.parse(datasSalvas) as { de?: string; ate?: string };
+				const deSalva = de ? new Date(de) : null;
+				const ateSalva = ate ? new Date(ate) : null;
+
+				if (
+					deSalva &&
+					ateSalva &&
+					!Number.isNaN(deSalva.getTime()) &&
+					!Number.isNaN(ateSalva.getTime()) &&
+					deSalva.getTime() <= ateSalva.getTime()
+				) {
+					deData = deSalva;
+					ateData = ateSalva;
+				}
+			} catch {
+				localStorage.removeItem(CHAVE_DATAS);
+			}
+		}
+
+		datasCarregadas = true;
 	});
 
 	const travadaAte = $derived(dataTravada === 'ate');
@@ -50,6 +85,21 @@
 
 	$effect(() => {
 		document.documentElement.classList.toggle('dark', escuro);
+	});
+
+	$effect(() => {
+		const de = deData.toISOString();
+		const ate = ateData.toISOString();
+
+		if (!datasCarregadas) {
+			return;
+		}
+
+		try {
+			localStorage.setItem(CHAVE_DATAS, JSON.stringify({ de, ate }));
+		} catch {
+			// Ignora falhas de armazenamento (ex.: modo privado ou cota cheia).
+		}
 	});
 
 	$effect(() => {
@@ -66,9 +116,58 @@
 		localStorage.setItem('tema', escuro ? 'dark' : 'light');
 	}
 
+	async function copiarData(qual: 'de' | 'ate', data: Date) {
+		await copiarTexto(data.toLocaleDateString('pt-BR'));
+
+		dataCopiada = qual;
+		clearTimeout(tempoDataCopiada);
+		tempoDataCopiada = setTimeout(() => {
+			dataCopiada = null;
+		}, 2000);
+	}
+
 	function alternarTrava(data: 'de' | 'ate') {
 		dataTravada = dataTravada === data ? null : data;
 		ultimaAtualizacao += 1;
+	}
+
+	function selecionarHoje(qual: 'de' | 'ate') {
+		const agora = new Date();
+		const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+
+		if (qual === 'de') {
+			deData = hoje;
+
+			if (hoje.getTime() > ateData.getTime()) {
+				ateData = hoje;
+			}
+		} else {
+			if (hoje.getTime() < deData.getTime()) {
+				return;
+			}
+
+			ateData = hoje;
+		}
+
+		ultimaAtualizacao += 1;
+	}
+
+	function ajustarDataInicial(data: Date) {
+		if (data.getTime() > ateData.getTime()) {
+			ateData = data;
+			ultimaAtualizacao += 1;
+		}
+	}
+
+	function podeSelecionarHoje(qual: 'de' | 'ate') {
+		if (qual === 'de') {
+			return true;
+		}
+
+		const agora = new Date();
+		const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+
+		return hoje.getTime() >= deData.getTime();
 	}
 
 	function diaDaSemana(data: Date) {
@@ -138,6 +237,38 @@
 	});
 </script>
 
+{#snippet AcaoHojeInicial({ close }: ActionSlotParams)}
+	<button
+		type="button"
+		class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-medium text-primary-700 transition hover:bg-primary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 dark:border-primary-800 dark:bg-primary-900/25 dark:text-primary-200 dark:hover:bg-primary-900/40 dark:focus-visible:ring-offset-slate-700 dark:disabled:border-slate-700 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
+		onclick={() => {
+			selecionarHoje('de');
+			close();
+		}}
+		disabled={!podeSelecionarHoje('de')}
+		title={podeSelecionarHoje('de') ? 'Selecionar hoje' : 'Hoje está fora do intervalo permitido'}
+	>
+		<CalendarMonthSolid class="h-4 w-4" aria-hidden="true" />
+		Selecionar hoje
+	</button>
+{/snippet}
+
+{#snippet AcaoHojeFinal({ close }: ActionSlotParams)}
+	<button
+		type="button"
+		class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-medium text-primary-700 transition hover:bg-primary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 dark:border-primary-800 dark:bg-primary-900/25 dark:text-primary-200 dark:hover:bg-primary-900/40 dark:focus-visible:ring-offset-slate-700 dark:disabled:border-slate-700 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
+		onclick={() => {
+			selecionarHoje('ate');
+			close();
+		}}
+		disabled={!podeSelecionarHoje('ate')}
+		title={podeSelecionarHoje('ate') ? 'Selecionar hoje' : 'Hoje está fora do intervalo permitido'}
+	>
+		<CalendarMonthSolid class="h-4 w-4" aria-hidden="true" />
+		Selecionar hoje
+	</button>
+{/snippet}
+
 <svelte:head>
 	<title>Calculadora de datas</title>
 	<meta
@@ -185,7 +316,7 @@
 			class="mt-8 grid flex-1 items-start gap-6 lg:mt-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"
 		>
 			<section
-				class="rounded-xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur sm:p-6 dark:border-slate-800 dark:bg-slate-900/80"
+				class="relative z-20 rounded-xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur sm:p-6 dark:border-slate-800 dark:bg-slate-900/80"
 				aria-labelledby="titulo-periodo"
 			>
 				<div class="flex flex-wrap items-center justify-between gap-3">
@@ -219,36 +350,57 @@
 								Data inicial
 							</label>
 
-							<button
-								type="button"
-								class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none dark:focus-visible:ring-offset-slate-900 {dataTravada ===
-								'de'
-									? 'bg-primary-600 text-white shadow-sm hover:bg-primary-700 dark:bg-primary-500 dark:text-slate-950 dark:hover:bg-primary-400'
-									: 'bg-white text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white'}"
-								onclick={() => alternarTrava('de')}
-								aria-pressed={dataTravada === 'de'}
-								aria-label={dataTravada === 'de'
-									? 'Destravar data inicial'
-									: 'Travar data inicial como referência'}
-								title={dataTravada === 'de'
-									? 'Destravar data inicial'
-									: 'Travar data inicial como referência'}
-							>
-								{#if dataTravada === 'de'}
-									<LockSolid class="h-5 w-5" />
-								{:else}
-									<LockOpenSolid class="h-5 w-5" />
-								{/if}
-							</button>
+							<div class="flex items-center gap-1">
+								<button
+									type="button"
+									class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white dark:focus-visible:ring-offset-slate-900"
+									onclick={() => copiarData('de', deData)}
+									aria-label="Copiar data inicial"
+									title={dataCopiada === 'de' ? 'Copiado!' : 'Copiar data inicial'}
+								>
+									{#if dataCopiada === 'de'}
+										<CheckOutline class="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+									{:else}
+										<ClipboardOutline class="h-5 w-5" />
+									{/if}
+								</button>
+
+								<button
+									type="button"
+									class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none dark:focus-visible:ring-offset-slate-900 {dataTravada ===
+									'de'
+										? 'bg-primary-600 text-white shadow-sm hover:bg-primary-700 dark:bg-primary-500 dark:text-slate-950 dark:hover:bg-primary-400'
+										: 'bg-white text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white'}"
+									onclick={() => alternarTrava('de')}
+									aria-pressed={dataTravada === 'de'}
+									aria-label={dataTravada === 'de'
+										? 'Destravar data inicial'
+										: 'Travar data inicial como referência'}
+									title={dataTravada === 'de'
+										? 'Destravar data inicial'
+										: 'Travar data inicial como referência'}
+								>
+									{#if dataTravada === 'de'}
+										<LockSolid class="h-5 w-5" />
+									{:else}
+										<LockOpenSolid class="h-5 w-5" />
+									{/if}
+								</button>
+							</div>
 						</div>
 
 						<Datepicker
 							bind:value={deData}
-							availableTo={ateData}
 							disabled={dataTravada === 'de'}
 							locale="pt-BR"
 							dateFormat={{ day: '2-digit', month: '2-digit', year: 'numeric' }}
 							placeholder="Selecione a data"
+							actionSlot={AcaoHojeInicial}
+							onselect={(data) => {
+								if (data instanceof Date) {
+									ajustarDataInicial(data);
+								}
+							}}
 							inputClass="mt-3 rounded-md border-slate-300 bg-white py-3 font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
 							inputProps={{
 								id: 'data-inicial',
@@ -270,7 +422,12 @@
 					</div>
 
 					<div class="flex items-center justify-center text-primary-500 dark:text-primary-300">
-						<ArrowRightOutline class="h-5 w-5 rotate-90 md:rotate-0" aria-hidden="true" />
+						<ArrowRightOutline
+							class="h-5 w-5 transition-transform {dataTravada === 'ate'
+								? '-rotate-90 md:rotate-180'
+								: 'rotate-90 md:rotate-0'}"
+							aria-hidden="true"
+						/>
 					</div>
 
 					<div
@@ -286,27 +443,43 @@
 								Data final
 							</label>
 
-							<button
-								type="button"
-								class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none dark:focus-visible:ring-offset-slate-900 {dataTravada ===
-								'ate'
-									? 'bg-primary-600 text-white shadow-sm hover:bg-primary-700 dark:bg-primary-500 dark:text-slate-950 dark:hover:bg-primary-400'
-									: 'bg-white text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white'}"
-								onclick={() => alternarTrava('ate')}
-								aria-pressed={dataTravada === 'ate'}
-								aria-label={dataTravada === 'ate'
-									? 'Destravar data final'
-									: 'Travar data final como referência'}
-								title={dataTravada === 'ate'
-									? 'Destravar data final'
-									: 'Travar data final como referência'}
-							>
-								{#if dataTravada === 'ate'}
-									<LockSolid class="h-5 w-5" />
-								{:else}
-									<LockOpenSolid class="h-5 w-5" />
-								{/if}
-							</button>
+							<div class="flex items-center gap-1">
+								<button
+									type="button"
+									class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white dark:focus-visible:ring-offset-slate-900"
+									onclick={() => copiarData('ate', ateData)}
+									aria-label="Copiar data final"
+									title={dataCopiada === 'ate' ? 'Copiado!' : 'Copiar data final'}
+								>
+									{#if dataCopiada === 'ate'}
+										<CheckOutline class="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+									{:else}
+										<ClipboardOutline class="h-5 w-5" />
+									{/if}
+								</button>
+
+								<button
+									type="button"
+									class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none dark:focus-visible:ring-offset-slate-900 {dataTravada ===
+									'ate'
+										? 'bg-primary-600 text-white shadow-sm hover:bg-primary-700 dark:bg-primary-500 dark:text-slate-950 dark:hover:bg-primary-400'
+										: 'bg-white text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white'}"
+									onclick={() => alternarTrava('ate')}
+									aria-pressed={dataTravada === 'ate'}
+									aria-label={dataTravada === 'ate'
+										? 'Destravar data final'
+										: 'Travar data final como referência'}
+									title={dataTravada === 'ate'
+										? 'Destravar data final'
+										: 'Travar data final como referência'}
+								>
+									{#if dataTravada === 'ate'}
+										<LockSolid class="h-5 w-5" />
+									{:else}
+										<LockOpenSolid class="h-5 w-5" />
+									{/if}
+								</button>
+							</div>
 						</div>
 
 						<Datepicker
@@ -316,6 +489,7 @@
 							locale="pt-BR"
 							dateFormat={{ day: '2-digit', month: '2-digit', year: 'numeric' }}
 							placeholder="Selecione a data"
+							actionSlot={AcaoHojeFinal}
 							inputClass="mt-3 rounded-md border-slate-300 bg-white py-3 font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
 							inputProps={{
 								id: 'data-final',
@@ -337,27 +511,33 @@
 					</div>
 				</div>
 
-				<div
-					class="mt-5 flex items-start gap-3 rounded-lg border border-primary-200/70 bg-primary-50/60 p-4 text-sm text-primary-900 dark:border-primary-800/70 dark:bg-primary-900/25 dark:text-primary-100"
-				>
-					<InfoCircleOutline
-						class="mt-0.5 h-5 w-5 shrink-0 text-primary-600 dark:text-primary-300"
-					/>
+				<div class="mt-4 flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400">
+					<InfoCircleOutline class="mt-0.5 h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
 					<p>
 						{#if dataTravada === 'ate'}
-							Os valores do resumo são contados a partir da <strong>data final</strong>, voltando no
-							tempo e atualizando a data inicial.
+							Os valores do resumo são contados a partir da <strong
+								class="font-medium text-slate-700 dark:text-slate-300">data final</strong
+							>, voltando no tempo e atualizando a data inicial.
 						{:else if dataTravada === 'de'}
-							Os valores do resumo são contados a partir da <strong>data inicial</strong>, avançando
-							no tempo e atualizando a data final.
+							Os valores do resumo são contados a partir da <strong
+								class="font-medium text-slate-700 dark:text-slate-300">data inicial</strong
+							>, avançando no tempo e atualizando a data final.
 						{:else}
-							Nenhuma data está travada, então a <strong>data inicial</strong> é usada como referência
-							padrão. Use o cadeado ao lado de uma data para fixá-la.
+							Nenhuma data está travada, então a <strong
+								class="font-medium text-slate-700 dark:text-slate-300">data inicial</strong
+							>
+							é usada como referência padrão. Use o cadeado ao lado de uma data para fixá-la.
 						{/if}
 					</p>
 				</div>
 
-				<Calendario de={deData} ate={ateData} ondefinir={definirIntervalo} />
+				<Calendario
+					de={deData}
+					ate={ateData}
+					ondefinir={definirIntervalo}
+					aberto={calendarioAberto}
+					onalternar={() => (calendarioAberto = !calendarioAberto)}
+				/>
 			</section>
 
 			<section

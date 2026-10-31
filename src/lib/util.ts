@@ -9,3 +9,18 @@ export function datePraPlainDate(data: Date) {
 export function plainDatePraDate(data: Temporal.PlainDate) {
 	return new Date(data.year, data.month - 1, data.day);
 }
+
+export async function copiarTexto(texto: string) {
+	try {
+		await navigator.clipboard.writeText(texto);
+	} catch {
+		const area = document.createElement('textarea');
+		area.value = texto;
+		area.style.position = 'fixed';
+		area.style.opacity = '0';
+		document.body.appendChild(area);
+		area.select();
+		document.execCommand('copy');
+		area.remove();
+	}
+}

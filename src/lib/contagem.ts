@@ -1,9 +1,6 @@
 import { pegarFeriadosIntervalo, type FeriadoBrasilAPI } from './feriados';
 
-export type ContagemDias = {
-	total: number;
-	du: number;
-	fds: number;
+export type ContagemPorDiaSemana = {
 	segunda: number;
 	terca: number;
 	quarta: number;
@@ -13,10 +10,17 @@ export type ContagemDias = {
 	domingo: number;
 };
 
+export type ContagemDias = {
+	total: number;
+	du: number;
+	fds: number;
+} & ContagemPorDiaSemana;
+
 export type ContagemFeriados = {
 	total: number;
 	unicos: number;
 	caiEmDiaUtil: number;
+	porDiaSemana: ContagemPorDiaSemana;
 };
 
 export function contarDias(deData: Temporal.PlainDate, ateData: Temporal.PlainDate): ContagemDias {
@@ -88,12 +92,52 @@ export async function contarFeriados(
 		return diaDaSemana !== 6 && diaDaSemana !== 7;
 	});
 
-	const diasUnicos = new Set(feriadosEntreDatas.map(({ date }) => date)).size;
+	const datasUnicas = new Set(feriadosEntreDatas.map(({ date }) => date));
+	const diasUnicos = datasUnicas.size;
 	const caiEmDiaUtil = new Set(feriadosContaveis.map(({ date }) => date)).size;
+
+	const porDiaSemana: ContagemPorDiaSemana = {
+		segunda: 0,
+		terca: 0,
+		quarta: 0,
+		quinta: 0,
+		sexta: 0,
+		sabado: 0,
+		domingo: 0
+	};
+
+	for (const date of datasUnicas) {
+		const dia = Temporal.PlainDate.from(date);
+
+		switch (dia.dayOfWeek) {
+			case 1:
+				porDiaSemana.segunda++;
+				break;
+			case 2:
+				porDiaSemana.terca++;
+				break;
+			case 3:
+				porDiaSemana.quarta++;
+				break;
+			case 4:
+				porDiaSemana.quinta++;
+				break;
+			case 5:
+				porDiaSemana.sexta++;
+				break;
+			case 6:
+				porDiaSemana.sabado++;
+				break;
+			case 7:
+				porDiaSemana.domingo++;
+				break;
+		}
+	}
 
 	return {
 		total: feriadosEntreDatas.length,
 		unicos: diasUnicos,
-		caiEmDiaUtil: caiEmDiaUtil
+		caiEmDiaUtil: caiEmDiaUtil,
+		porDiaSemana
 	};
 }
