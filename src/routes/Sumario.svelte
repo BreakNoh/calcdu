@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { CampoDias } from '#lib/calcular.ts';
 	import type { ContagemDias, ContagemFeriados } from '#lib/contagem.ts';
-	import { copiarTexto } from '#lib/util.ts';
+	import { copiarTexto, plainDatePraDate } from '#lib/util.ts';
 	import { Input } from 'flowbite-svelte';
 	import { CheckOutline, ChevronDownOutline, ClipboardOutline } from 'flowbite-svelte-icons';
 
@@ -25,6 +25,21 @@
 		{ chave: 'sabado', rotulo: 'Sábado' },
 		{ chave: 'domingo', rotulo: 'Domingo' }
 	] as const;
+
+	const formatadorData = new Intl.DateTimeFormat('pt-BR', {
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric'
+	});
+	const formatadorDiaSemana = new Intl.DateTimeFormat('pt-BR', { weekday: 'long' });
+
+	function formatarData(data: Temporal.PlainDate) {
+		return formatadorData.format(plainDatePraDate(data));
+	}
+
+	function formatarDiaSemana(data: Temporal.PlainDate) {
+		return formatadorDiaSemana.format(plainDatePraDate(data));
+	}
 
 	let aberto = $state<CampoDias | null>(null);
 
@@ -142,45 +157,81 @@
 				id={`detalhes-${campo}`}
 				class="mt-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/40"
 			>
-				<p
-					class="text-[11px] font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400"
-				>
-					Por dia da semana
-				</p>
+				{#if campo === 'feriados'}
+					<p
+						class="text-[11px] font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400"
+					>
+						Feriados no período
+					</p>
 
-				<div class="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-					{#each detalhesPorDia(campo) as detalhe (detalhe.chave)}
-						<button
-							type="button"
-							class="group/dia flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none {copiado ===
-							`${campo}-${detalhe.chave}`
-								? 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/40'
-								: 'bg-white hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-700'}"
-							onclick={() => copiar(`${campo}-${detalhe.chave}`, detalhe.valor)}
-							aria-label={`Copiar ${detalhe.rotulo.toLowerCase()}: ${detalhe.valor}`}
-							title={copiado === `${campo}-${detalhe.chave}`
-								? 'Copiado!'
-								: `Copiar ${detalhe.rotulo.toLowerCase()}`}
-						>
-							<span class="text-slate-500 dark:text-slate-400">{detalhe.rotulo}</span>
-							<span
-								class="flex items-center gap-1 font-semibold tabular-nums {copiado ===
+					{#if contagemFeriados.lista.length === 0}
+						<p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+							Nenhum feriado nacional no período.
+						</p>
+					{:else}
+						<ul class="mt-2 space-y-1.5">
+							{#each contagemFeriados.lista as feriado (feriado.data.toString())}
+								<li
+									class="flex items-center gap-3 rounded-md bg-white px-2 py-1.5 text-xs dark:bg-slate-800/70"
+								>
+									<span
+										class="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-700 tabular-nums dark:bg-slate-700/60 dark:text-slate-200"
+									>
+										{formatarData(feriado.data)}
+									</span>
+									<span class="min-w-0">
+										<span class="block truncate font-medium text-slate-900 dark:text-slate-100">
+											{feriado.nome}
+										</span>
+										<span class="block text-slate-500 capitalize dark:text-slate-400">
+											{formatarDiaSemana(feriado.data)}
+										</span>
+									</span>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+				{:else}
+					<p
+						class="text-[11px] font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400"
+					>
+						Por dia da semana
+					</p>
+
+					<div class="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+						{#each detalhesPorDia(campo) as detalhe (detalhe.chave)}
+							<button
+								type="button"
+								class="group/dia flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs transition focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none {copiado ===
 								`${campo}-${detalhe.chave}`
-									? 'text-emerald-700 dark:text-emerald-400'
-									: 'text-slate-900 dark:text-slate-100'}"
+									? 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/40'
+									: 'bg-white hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-700'}"
+								onclick={() => copiar(`${campo}-${detalhe.chave}`, detalhe.valor)}
+								aria-label={`Copiar ${detalhe.rotulo.toLowerCase()}: ${detalhe.valor}`}
+								title={copiado === `${campo}-${detalhe.chave}`
+									? 'Copiado!'
+									: `Copiar ${detalhe.rotulo.toLowerCase()}`}
 							>
-								{detalhe.valor}
-								{#if copiado === `${campo}-${detalhe.chave}`}
-									<CheckOutline class="h-3 w-3" />
-								{:else}
-									<ClipboardOutline
-										class="h-3 w-3 text-slate-400 opacity-0 transition-opacity group-hover/dia:opacity-100 group-focus-visible/dia:opacity-100 dark:text-slate-500"
-									/>
-								{/if}
-							</span>
-						</button>
-					{/each}
-				</div>
+								<span class="text-slate-500 dark:text-slate-400">{detalhe.rotulo}</span>
+								<span
+									class="flex items-center gap-1 font-semibold tabular-nums {copiado ===
+									`${campo}-${detalhe.chave}`
+										? 'text-emerald-700 dark:text-emerald-400'
+										: 'text-slate-900 dark:text-slate-100'}"
+								>
+									{detalhe.valor}
+									{#if copiado === `${campo}-${detalhe.chave}`}
+										<CheckOutline class="h-3 w-3" />
+									{:else}
+										<ClipboardOutline
+											class="h-3 w-3 text-slate-400 opacity-0 transition-opacity group-hover/dia:opacity-100 group-focus-visible/dia:opacity-100 dark:text-slate-500"
+										/>
+									{/if}
+								</span>
+							</button>
+						{/each}
+					</div>
+				{/if}
 			</div>
 		{/if}
 	</li>

@@ -4,11 +4,13 @@
 		CalendarMonthSolid,
 		CheckOutline,
 		ClipboardOutline,
+		GithubSolid,
 		InfoCircleOutline,
 		LockOpenSolid,
 		LockSolid,
 		MoonSolid,
-		SunSolid
+		SunSolid,
+		UserCircleOutline
 	} from 'flowbite-svelte-icons';
 	import { onMount } from 'svelte';
 	import { Datepicker, type ActionSlotParams } from 'flowbite-svelte';
@@ -574,8 +576,44 @@
 			</section>
 		</main>
 
-		<footer class="mt-8 text-xs text-slate-500 dark:text-slate-400">
-			Contagem inclusiva: a data inicial e a data final fazem parte do intervalo.
+		<footer
+			class="mt-8 flex flex-col gap-3 border-t border-slate-200 pt-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:text-slate-400"
+		>
+			<div class="space-y-1">
+				<p>Contagem inclusiva: a data inicial e a data final fazem parte do intervalo.</p>
+				<p>
+					Fonte dos feriados:
+					<a
+						href="https://brasilapi.com.br"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="rounded-sm font-medium underline-offset-2 transition hover:text-slate-900 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none dark:hover:text-white"
+					>
+						BrasilAPI
+					</a>
+				</p>
+			</div>
+
+			<nav class="flex items-center gap-4" aria-label="Links do autor">
+				<a
+					href="https://github.com/breaknoh"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="inline-flex items-center gap-1.5 rounded-md transition hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none dark:hover:text-white"
+				>
+					<GithubSolid class="h-4 w-4" />
+					BreakNoh
+				</a>
+				<a
+					href="https://bre.dev.br"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="inline-flex items-center gap-1.5 rounded-md transition hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none dark:hover:text-white"
+				>
+					<UserCircleOutline class="h-4 w-4" />
+					feito por Breno Meneses
+				</a>
+			</nav>
 		</footer>
 	</div>
 </div>

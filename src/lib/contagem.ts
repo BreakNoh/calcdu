@@ -16,11 +16,17 @@ export type ContagemDias = {
 	fds: number;
 } & ContagemPorDiaSemana;
 
+export type FeriadoContado = {
+	data: Temporal.PlainDate;
+	nome: string;
+};
+
 export type ContagemFeriados = {
 	total: number;
 	unicos: number;
 	caiEmDiaUtil: number;
 	porDiaSemana: ContagemPorDiaSemana;
+	lista: FeriadoContado[];
 };
 
 export function contarDias(deData: Temporal.PlainDate, ateData: Temporal.PlainDate): ContagemDias {
@@ -96,6 +102,24 @@ export async function contarFeriados(
 	const diasUnicos = datasUnicas.size;
 	const caiEmDiaUtil = new Set(feriadosContaveis.map(({ date }) => date)).size;
 
+	const feriadosPorData = new Map<string, { data: Temporal.PlainDate; nomes: Set<string> }>();
+
+	for (const { date, name } of feriadosEntreDatas) {
+		const data = Temporal.PlainDate.from(date);
+		const chave = data.toString();
+		const feriado = feriadosPorData.get(chave);
+
+		if (feriado) {
+			feriado.nomes.add(name);
+		} else {
+			feriadosPorData.set(chave, { data, nomes: new Set([name]) });
+		}
+	}
+
+	const lista = [...feriadosPorData.values()]
+		.sort((a, b) => Temporal.PlainDate.compare(a.data, b.data))
+		.map(({ data, nomes }) => ({ data, nome: [...nomes].join(' / ') }));
+
 	const porDiaSemana: ContagemPorDiaSemana = {
 		segunda: 0,
 		terca: 0,
@@ -138,6 +162,7 @@ export async function contarFeriados(
 		total: feriadosEntreDatas.length,
 		unicos: diasUnicos,
 		caiEmDiaUtil: caiEmDiaUtil,
-		porDiaSemana
+		porDiaSemana,
+		lista
 	};
 }
