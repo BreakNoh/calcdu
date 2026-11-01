@@ -21,3 +21,13 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# SEO Skills AI (scaffolding local, não faz parte do app)
+/AGENTS.md
+/.cursorrules
+/.claude-plugin
+/.codex-plugin
+/agents
+/hooks
+/scripts/*.py
+/scripts/__pycache__
