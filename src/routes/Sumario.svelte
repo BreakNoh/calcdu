@@ -41,7 +41,7 @@
 		return formatadorDiaSemana.format(plainDatePraDate(data));
 	}
 
-	let aberto = $state<CampoDias | null>(null);
+	let aberto = $state<CampoDias | null>('feriados');
 
 	function alternar(campo: CampoDias) {
 		aberto = aberto === campo ? null : campo;
@@ -169,7 +169,7 @@
 							Nenhum feriado nacional no período.
 						</p>
 					{:else}
-						<ul class="mt-2 space-y-1.5">
+						<ul class="mt-2 space-y-1.5 max-h-56 overflow-y-auto pr-1">
 							{#each contagemFeriados.lista as feriado (feriado.data.toString())}
 								<li
 									class="flex items-center gap-3 rounded-md bg-white px-2 py-1.5 text-xs dark:bg-slate-800/70"
