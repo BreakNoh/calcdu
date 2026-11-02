@@ -430,7 +430,7 @@
 			class="mt-8 grid flex-1 items-start gap-6 lg:mt-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"
 		>
 			<section
-				class="relative z-20 rounded-xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur sm:p-6 dark:border-slate-800 dark:bg-slate-900/80"
+				class="relative z-20 min-w-0 rounded-xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur sm:p-6 dark:border-slate-800 dark:bg-slate-900/80"
 				aria-labelledby="titulo-periodo"
 			>
 				<div class="flex flex-wrap items-center justify-between gap-3">
@@ -655,7 +655,7 @@
 			</section>
 
 			<section
-				class="rounded-xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur sm:p-6 dark:border-slate-800 dark:bg-slate-900/80"
+				class="min-w-0 rounded-xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur sm:p-6 dark:border-slate-800 dark:bg-slate-900/80"
 				aria-labelledby="titulo-resumo"
 			>
 				<div class="flex items-start justify-between gap-3">
@@ -689,7 +689,7 @@
 
 			<section
 				id="conteudo"
-				class="mt-6 border-t border-slate-200 pt-8 lg:col-span-2 dark:border-slate-800"
+				class="mt-6 min-w-0 border-t border-slate-200 pt-8 lg:col-span-2 dark:border-slate-800"
 				aria-labelledby="titulo-conteudo"
 			>
 				<div class="mx-auto max-w-3xl">
