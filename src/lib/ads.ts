@@ -11,5 +11,5 @@ export const ADSENSE_SLOTS = {
 	lateralEsquerda: '0000000000',
 	lateralDireita: '0000000000',
 	mobile: '0000000000',
-	conteudo: '0000000000'
+	conteudo: '2294290069'
 } as const;

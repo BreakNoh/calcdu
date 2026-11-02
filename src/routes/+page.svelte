@@ -922,12 +922,7 @@
 						</p>
 
 						<div class="my-8">
-							<Anuncio
-								slot={ADSENSE_SLOTS.conteudo}
-								formato="fluid"
-								layout="in-article"
-								class="min-h-[150px]"
-							/>
+							<Anuncio slot={ADSENSE_SLOTS.conteudo} formato="auto" class="min-h-[150px]" />
 						</div>
 
 						<h2 id="exemplos" class="mt-10 text-2xl font-semibold tracking-tight">
