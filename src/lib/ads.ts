@@ -10,6 +10,6 @@ export const ADSENSE_CLIENT = 'ca-pub-1547067636561503';
 export const ADSENSE_SLOTS = {
 	lateralEsquerda: '0000000000',
 	lateralDireita: '0000000000',
-	mobile: '0000000000',
+	mobile: '2294290069',
 	conteudo: '2294290069'
 } as const;
