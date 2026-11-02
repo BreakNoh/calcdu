@@ -8,8 +8,8 @@ export const ADSENSE_CLIENT = 'ca-pub-1547067636561503';
  * placeholder `0000000000`, os blocos não exibem anúncios.
  */
 export const ADSENSE_SLOTS = {
-	lateralEsquerda: '0000000000',
-	lateralDireita: '0000000000',
+	lateralEsquerda: '4951795885',
+	lateralDireita: '4951795885',
 	mobile: '2294290069',
 	conteudo: '2294290069'
 } as const;
