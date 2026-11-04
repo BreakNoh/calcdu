@@ -31,7 +31,7 @@
 	import Calendario from './Calendario.svelte';
 	import Sumario from './Sumario.svelte';
 	import Anuncio from '#lib/Anuncio.svelte';
-	import { ADSENSE_SLOTS } from '#lib/ads.ts';
+	import { ADSENSE_SLOTS, ADS_ENABLED } from '#lib/ads.ts';
 	import { absoluteUrl, SITE } from '#lib/site.ts';
 
 	const pageUrl = absoluteUrl('/');
@@ -413,18 +413,20 @@
 	<div
 		class="relative mx-auto flex min-h-dvh w-full max-w-[90rem] gap-6 px-4 py-8 sm:px-6 lg:py-12 xl:gap-8"
 	>
-		<aside class="hidden w-40 shrink-0 xl:block">
-			{#if telaLarga}
-				<div class="sticky top-8">
-					<Anuncio
-						slot={ADSENSE_SLOTS.lateralEsquerda}
-						formato="vertical"
-						responsivo={false}
-						class="min-h-[600px]"
-					/>
-				</div>
-			{/if}
-		</aside>
+		{#if ADS_ENABLED}
+			<aside class="hidden w-40 shrink-0 xl:block">
+				{#if telaLarga}
+					<div class="sticky top-8">
+						<Anuncio
+							slot={ADSENSE_SLOTS.lateralEsquerda}
+							formato="vertical"
+							responsivo={false}
+							class="min-h-[600px]"
+						/>
+					</div>
+				{/if}
+			</aside>
+		{/if}
 
 		<div class="mx-auto flex min-h-dvh w-full max-w-5xl min-w-0 flex-1 flex-col">
 			<a
@@ -697,11 +699,13 @@
 					/>
 				</section>
 
-				<div class="min-h-[250px] lg:hidden">
-					{#if telaPequena}
-						<Anuncio slot={ADSENSE_SLOTS.mobile} formato="horizontal" class="min-h-[250px]" />
-					{/if}
-				</div>
+				{#if ADS_ENABLED}
+					<div class="min-h-[250px] lg:hidden">
+						{#if telaPequena}
+							<Anuncio slot={ADSENSE_SLOTS.mobile} formato="horizontal" class="min-h-[250px]" />
+						{/if}
+					</div>
+				{/if}
 
 				<section
 					class="min-w-0 rounded-xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur sm:p-6 dark:border-slate-800 dark:bg-slate-900/80"
@@ -921,9 +925,11 @@
 							portaria ou o decreto do órgão responsável.
 						</p>
 
-						<div class="my-8">
-							<Anuncio slot={ADSENSE_SLOTS.conteudo} formato="auto" class="min-h-[150px]" />
-						</div>
+						{#if ADS_ENABLED}
+							<div class="my-8">
+								<Anuncio slot={ADSENSE_SLOTS.conteudo} formato="auto" class="min-h-[150px]" />
+							</div>
+						{/if}
 
 						<h2 id="exemplos" class="mt-10 text-2xl font-semibold tracking-tight">
 							Exemplos práticos de contagem de datas
@@ -1150,17 +1156,19 @@
 			</footer>
 		</div>
 
-		<aside class="hidden w-40 shrink-0 xl:block">
-			{#if telaLarga}
-				<div class="sticky top-8">
-					<Anuncio
-						slot={ADSENSE_SLOTS.lateralDireita}
-						formato="vertical"
-						responsivo={false}
-						class="min-h-[600px]"
-					/>
-				</div>
-			{/if}
-		</aside>
+		{#if ADS_ENABLED}
+			<aside class="hidden w-40 shrink-0 xl:block">
+				{#if telaLarga}
+					<div class="sticky top-8">
+						<Anuncio
+							slot={ADSENSE_SLOTS.lateralDireita}
+							formato="vertical"
+							responsivo={false}
+							class="min-h-[600px]"
+						/>
+					</div>
+				{/if}
+			</aside>
+		{/if}
 	</div>
 </div>

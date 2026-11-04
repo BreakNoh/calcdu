@@ -11,5 +11,14 @@ export const variables = defineEnvVars({
 		public: true,
 		static: true,
 		schema: (value) => (value && value.trim() ? value.trim().replace(/\/+$/, '') : FALLBACK_URL)
+	},
+	/**
+	 * Exibe ou omite anúncios do AdSense (cards e metatags).
+	 * Desativado por padrão; use `true` para habilitar no build.
+	 */
+	PUBLIC_ADS_ENABLED: {
+		public: true,
+		static: true,
+		schema: (value) => value?.trim().toLowerCase() === 'true'
 	}
 });

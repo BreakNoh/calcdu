@@ -1,3 +1,13 @@
+import { PUBLIC_ADS_ENABLED } from '$app/env/public';
+
+/**
+ * Flag que controla a exibição dos anúncios.
+ *
+ * Definida em src/env.ts a partir de PUBLIC_ADS_ENABLED. Quando `false`,
+ * os cards de anúncio e as metatags do AdSense não são renderizados.
+ */
+export const ADS_ENABLED = PUBLIC_ADS_ENABLED;
+
 export const ADSENSE_CLIENT = 'ca-pub-1547067636561503';
 
 /**
